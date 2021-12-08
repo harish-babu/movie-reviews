@@ -18,7 +18,7 @@ public class JwtTokenServiceTest {
         final JwtTokenService classUnderTest = jwtService(-1);
 
         //when
-        final JwtToken generatedToken = classUnderTest.generateJwt("user");
+        final JwtToken generatedToken = classUnderTest.generateJwt("user", "admin");
         final Optional<UserPrincipal> principal = classUnderTest.authenticate(generatedToken);
 
         //then
@@ -31,7 +31,7 @@ public class JwtTokenServiceTest {
         final JwtTokenService classUnderTest = jwtService(5);
 
         //when
-        final JwtToken generatedToken = classUnderTest.generateJwt("user");
+        final JwtToken generatedToken = classUnderTest.generateJwt("user", "admin");
         final Optional<UserPrincipal> principal = classUnderTest.authenticate(generatedToken);
 
         //then

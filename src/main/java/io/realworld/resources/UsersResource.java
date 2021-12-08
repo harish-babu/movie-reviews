@@ -1,11 +1,14 @@
 package io.realworld.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dropwizard.auth.Auth;
 import io.realworld.api.request.Login;
 import io.realworld.api.request.NewUser;
 import io.realworld.api.response.User;
 import io.realworld.core.UserService;
+import io.realworld.security.UserPrincipal;
 
+import javax.annotation.security.RolesAllowed;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -30,7 +33,7 @@ public class UsersResource {
     @Path("login")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response login(@Valid @NotNull final Login login) {
+    public Response login(@Auth final User principal, @Valid @NotNull final Login login) {
         final User user = userService.login(login);
         return Response.ok(Map.of("user", user)).build();
     }
@@ -38,7 +41,8 @@ public class UsersResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response register(@Valid @NotNull final NewUser newUser) {
+    @RolesAllowed("ADMIN")
+    public Response register(@Auth final UserPrincipal principal, @Valid @NotNull final NewUser newUser) {
         final User user = userService.saveUser(newUser);
 
         return Response.status(Response.Status.CREATED)

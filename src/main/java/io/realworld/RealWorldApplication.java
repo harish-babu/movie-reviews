@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import io.dropwizard.Application;
-import io.dropwizard.auth.AuthDynamicFeature;
-import io.dropwizard.auth.AuthValueFactoryProvider;
-import io.dropwizard.auth.chained.ChainedAuthFilter;
+import io.dropwizard.auth.PolymorphicAuthDynamicFeature;
+import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
+import io.dropwizard.auth.basic.BasicCredentialAuthFilter;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.db.DataSourceFactory;
@@ -16,6 +18,7 @@ import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.migrations.MigrationsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import io.realworld.api.response.User;
 import io.realworld.core.ArticleService;
 import io.realworld.core.CommentService;
 import io.realworld.core.ProfileService;
@@ -28,9 +31,9 @@ import io.realworld.resources.*;
 import io.realworld.resources.exceptionhandling.ApplicationExceptionMapper;
 import io.realworld.resources.exceptionhandling.GeneralExceptionMapper;
 import io.realworld.security.*;
+import org.glassfish.jersey.internal.inject.AbstractBinder;
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.jdbi.v3.core.Jdbi;
-
-import java.util.List;
 
 import static io.realworld.security.JwtAuthFilter.TOKEN_PREFIX;
 
@@ -85,16 +88,32 @@ public class RealWorldApplication extends Application<RealWorldConfiguration> {
         env.jersey().register(new GeneralExceptionMapper());
 
         configureJsonMapper(env.getObjectMapper());
-        configureJwtAuth(env.jersey(), jwtTokenService);
+        configureAuth(env.jersey(), jwtTokenService, userService);
     }
 
-    private void configureJwtAuth(final JerseyEnvironment env, final JwtTokenService jwtTokenService) {
-        env.register(new AuthValueFactoryProvider.Binder<>(UserPrincipal.class));
-        env.register(new AuthDynamicFeature(new ChainedAuthFilter<JwtToken, UserPrincipal>(
-                List.of(new JwtAuthFilter.Builder<UserPrincipal>()
-                        .setPrefix(TOKEN_PREFIX)
-                        .setAuthenticator(jwtTokenService)
-                        .buildAuthFilter()))));
+    private void configureAuth (final JerseyEnvironment env, final JwtTokenService jwtTokenService, UserService userSvc) {
+
+        // Use Polymorphic Auth
+
+        final JwtAuthFilter<UserPrincipal> jwtAuthFilter = new JwtAuthFilter.Builder<UserPrincipal>()
+                .setPrefix(TOKEN_PREFIX)
+                .setAuthenticator(jwtTokenService)
+                .setAuthorizer(new RBACAuthoriser())
+                .buildAuthFilter();
+        final BasicCredentialAuthFilter<User> basicCredentialAuthFilter = new BasicCredentialAuthFilter.Builder<User>()
+                .setAuthenticator(new PasswordAuthenticator(userSvc))
+                .buildAuthFilter();
+
+        final PolymorphicAuthDynamicFeature feature = new PolymorphicAuthDynamicFeature<>(
+                ImmutableMap.of(
+                        User.class, basicCredentialAuthFilter,
+                        UserPrincipal.class, jwtAuthFilter));
+        final AbstractBinder binder = new PolymorphicAuthValueFactoryProvider.Binder<>(
+                ImmutableSet.of(UserPrincipal.class, User.class));
+
+        env.register(RolesAllowedDynamicFeature.class);
+        env.register(binder);
+        env.register(feature);
     }
 
     private void configureJsonMapper(final ObjectMapper mapper) {

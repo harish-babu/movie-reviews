@@ -24,18 +24,19 @@ public class JwtTokenService implements Authenticator<JwtToken, UserPrincipal> {
                     .build()
                     .parseClaimsJws(credentials.getToken());
 
-            return Optional.of(new UserPrincipal(claims.getBody().getSubject()));
+            return Optional.of(new UserPrincipal(claims.getBody().getSubject(), claims.getBody().get("profiles",String.class)));
         } catch (final JwtException e) {
             return Optional.empty();
         }
     }
 
-    public JwtToken generateJwt(final String username) {
+    public JwtToken generateJwt(final String username, final String profiles) {
         final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
         final Key signingKey = new SecretKeySpec(jwtConfig.getSecret(), signatureAlgorithm.getJcaName());
         final Date issuedAt = new Date();
         final String token = Jwts.builder()
                 .setSubject(username)
+                .claim("profiles", profiles)
                 .setIssuedAt(issuedAt)
                 .setExpiration(new Date(issuedAt.getTime() + jwtConfig.getTokenExpiration().toMillis()))
                 .signWith(signingKey, signatureAlgorithm)

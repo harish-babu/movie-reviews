@@ -28,19 +28,28 @@ public class UserService {
         this.jwtTokenService = jwtTokenService;
     }
 
+    public User login(final String email, final String password) {
+        final User user = userRepository.findUserByEmail(email);
+        if (user == null || !passwordEncoder.matches(password, user.getPassword())) {
+            throw new ApplicationException(INVALID_CREDENTIALS);
+        }
+        user.setToken(jwtTokenService.generateJwt(user.getUsername(), user.getProfiles()).getToken());
+        return user;
+    }
+
     public User login(final Login login) {
         final User user = userRepository.findUserByEmail(login.getEmail());
         if (user == null || !passwordEncoder.matches(login.getPassword(), user.getPassword())) {
             throw new ApplicationException(INVALID_CREDENTIALS);
         }
-        user.setToken(jwtTokenService.generateJwt(user.getUsername()).getToken());
+        user.setToken(jwtTokenService.generateJwt(user.getUsername(), user.getProfiles()).getToken());
         return user;
     }
 
 
     public User findByUsername(final String username) {
         final User user = findUser(username);
-        user.setToken(jwtTokenService.generateJwt(user.getUsername()).getToken());
+        user.setToken(jwtTokenService.generateJwt(user.getUsername(), user.getProfiles()).getToken());
         return user;
     }
 
@@ -53,7 +62,7 @@ public class UserService {
                 passwordEncoder.encode(user.getPassword()));
 
         final User createdUser = userRepository.findUserById(id);
-        createdUser.setToken(jwtTokenService.generateJwt(user.getUsername()).getToken());
+        createdUser.setToken(jwtTokenService.generateJwt(user.getUsername(), createdUser.getProfiles()).getToken());
         return createdUser;
     }
 

@@ -2,7 +2,9 @@ package io.realworld.api.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class User {
+import java.security.Principal;
+
+public class User implements Principal {
     @JsonIgnore
     private Long id;
     private String email;
@@ -10,8 +12,18 @@ public class User {
     private String bio;
     private String image;
     private String token;
+    private String profiles;
+
     @JsonIgnore
     private String password;
+
+    public User(String username) {
+        this.username = username;
+    }
+
+    public User () {
+        return;
+    }
 
     public Long getId() {
         return id;
@@ -53,6 +65,14 @@ public class User {
         this.image = image;
     }
 
+    public String getProfiles() {
+        return profiles;
+    }
+
+    public void setProfiles(final String profiles) {
+        this.profiles = profiles;
+    }
+
     public String getToken() {
         return token;
     }
@@ -67,5 +87,10 @@ public class User {
 
     public void setPassword(final String password) {
         this.password = password;
+    }
+
+    @Override
+    public String getName() {
+        return getUsername();
     }
 }
