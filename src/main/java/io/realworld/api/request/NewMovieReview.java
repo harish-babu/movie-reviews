@@ -6,8 +6,8 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.util.Set;
 
-@JsonRootName("article")
-public class NewArticle {
+@JsonRootName("movieReview")
+public class NewMovieReview {
     @NotNull
     @NotEmpty
     private String title;

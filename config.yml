@@ -8,6 +8,10 @@ server:
   applicationConnectors:
     - type: http
       port: 8080
+  gzip:
+    enabled: true
+    bufferSize: 8KiB
+    minimumEntitySize: 256B
 
 jwt:
   secret: UWVUaFdtWnE1dDd3IXokQyZGKUpATmNSZlVqWG4ycjU=

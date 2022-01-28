@@ -1,8 +1,8 @@
 package io.realworld.db;
 
 import com.codahale.metrics.annotation.Timed;
-import io.realworld.api.response.Article;
-import io.realworld.db.mapper.ArticleMapper;
+import io.realworld.api.response.MovieReview;
+import io.realworld.db.mapper.ReviewMapper;
 import org.jdbi.v3.sqlobject.config.RegisterRowMapper;
 import org.jdbi.v3.sqlobject.customizer.Bind;
 import org.jdbi.v3.sqlobject.customizer.BindList;
@@ -14,28 +14,29 @@ import java.util.List;
 import java.util.Set;
 
 @Timed
-public interface ArticleRepository {
+public interface ReviewRepository {
 
     @SqlQuery("SELECT articles.*, users.USERNAME, users.BIO, users.IMAGE " +
             "FROM articles INNER JOIN users ON articles.AUTHOR_ID = users.ID " +
             "WHERE slug = :slug")
-    @RegisterRowMapper(ArticleMapper.class)
-    Article findArticle(@Bind("slug") String slug);
+    @RegisterRowMapper(ReviewMapper.class)
+    MovieReview findReview(@Bind("slug") String slug);
 
     @SqlQuery("SELECT ID FROM articles WHERE SLUG = :slug")
-    Long findArticleIdBySlug(@Bind("slug") String slug);
+    Long findReviewIdBySlug(@Bind("slug") String slug);
 
     @SqlQuery("SELECT articles.*, users.USERNAME, users.BIO, users.IMAGE " +
             "FROM articles INNER JOIN users ON articles.AUTHOR_ID = users.ID " +
             "WHERE articles.ID = :articleId")
-    @RegisterRowMapper(ArticleMapper.class)
-    Article findArticleById(@Bind("articleId") long articleId);
+    @RegisterRowMapper(ReviewMapper.class)
+    MovieReview findReviewById(@Bind("articleId") long articleId);
 
     @GetGeneratedKeys
-    @SqlUpdate("INSERT INTO articles (TITLE, DESCRIPTION, BODY, SLUG, AUTHOR_ID, CREATED_AT, UPDATED_AT) " +
-            "VALUES (:title, :description, :body, :slug, :authorId, current_timestamp, current_timestamp)")
+    @SqlUpdate("INSERT INTO articles (TITLE, DESCRIPTION, BODY, SLUG, AUTHOR_ID, MOVIE_ID, CREATED_AT, UPDATED_AT) " +
+            "VALUES (:title, :description, :body, :slug, :authorId, :movieId, current_timestamp, current_timestamp)")
     Long saveArticle(@Bind("authorId") Long authorId,
                      @Bind("slug") String slug,
+                     @Bind("movieId") Long movieId,
                      @Bind("title") String title,
                      @Bind("description") String description,
                      @Bind("body") String body);
@@ -47,11 +48,11 @@ public interface ArticleRepository {
             "BODY = :body, " +
             "UPDATED_AT = current_timestamp " +
             "WHERE ID = :id")
-    void updateArticle(@Bind("id") Long id,
-                       @Bind("slug") String slug,
-                       @Bind("title") String title,
-                       @Bind("description") String description,
-                       @Bind("body") String body);
+    void updateReview(@Bind("id") Long id,
+                      @Bind("slug") String slug,
+                      @Bind("title") String title,
+                      @Bind("description") String description,
+                      @Bind("body") String body);
 
     @SqlQuery("SELECT distinct(articles.ID), articles.*, users.USERNAME, users.BIO, users.IMAGE FROM articles " +
             "LEFT JOIN articles_tags ON articles.ID = articles_tags.ARTICLE_ID " +
@@ -59,17 +60,19 @@ public interface ArticleRepository {
             "LEFT JOIN users ON articles.AUTHOR_ID = users.ID " +
             "LEFT JOIN favorites ON articles.ID = favorites.ARTICLE_ID " +
             "WHERE (:author IS NULL OR users.USERNAME=:author) " +
+            "AND (:movieId IS NULL OR articles.MOVIE_ID =:movieId) " +
             "AND (:tag IS NULL OR tags.NAME =:tag) " +
             "AND (:favoritedBy IS NULL OR :favoritedBy = favorites.USER_ID) " +
             "ORDER BY articles.CREATED_AT DESC " +
             "LIMIT :limit " +
             "OFFSET :offset")
-    @RegisterRowMapper(ArticleMapper.class)
-    List<Article> findArticles(@Bind("author") String author,
-                               @Bind("tag") String tag,
-                               @Bind("favoritedBy") Long favoritedBy,
-                               @Bind("offset") int offset,
-                               @Bind("limit") int limit);
+    @RegisterRowMapper(ReviewMapper.class)
+    List<MovieReview> findReviews(@Bind("movieId") Long movieId,
+                                  @Bind("author") String author,
+                                  @Bind("tag") String tag,
+                                  @Bind("favoritedBy") Long favoritedBy,
+                                  @Bind("offset") int offset,
+                                  @Bind("limit") int limit);
 
     @SqlQuery("SELECT count(distinct articles.ID) FROM articles " +
             "LEFT JOIN articles_tags ON articles.ID = articles_tags.ARTICLE_ID " +
@@ -77,13 +80,14 @@ public interface ArticleRepository {
             "LEFT JOIN users ON articles.AUTHOR_ID = users.ID " +
             "LEFT JOIN favorites ON articles.ID = favorites.ARTICLE_ID " +
             "WHERE (:author IS NULL OR users.USERNAME=:author)" +
+            "AND (:movieId IS NULL OR articles.MOVIE_ID =:movieId) " +
             "AND (:tag IS NULL OR tags.NAME =:tag) " +
             "AND (:favoritedBy IS NULL OR :favoritedBy = favorites.USER_ID)")
-    int countArticles(@Bind("author") String author, @Bind("tag") String tag, @Bind("favoritedBy") Long favoritedBy);
+    int countReviews(@Bind("movieId") Long movieId, @Bind("author") String author, @Bind("tag") String tag, @Bind("favoritedBy") Long favoritedBy);
 
 
     @SqlUpdate("DELETE FROM articles WHERE SLUG = :slug")
-    void deleteArticle(@Bind("slug") String slug);
+    void deleteReview(@Bind("slug") String slug);
 
     @SqlUpdate("INSERT INTO favorites (USER_ID, ARTICLE_ID) VALUES (:userId, :articleId)")
     void addToFavorites(@Bind("userId") Long userId, @Bind("articleId") Long articleId);
@@ -91,6 +95,10 @@ public interface ArticleRepository {
     @SqlUpdate("DELETE FROM favorites where USER_ID = :userId and ARTICLE_ID = :articleId")
     void removeFromFavorites(@Bind("userId") Long userId, @Bind("articleId") Long articleId);
 
+    /*
+     * This query finds all authors who have followers (the first 3 inner joins), then joins it with users to get
+     * user name of followers, matches them against the user name that has been provided in query.
+     */
     @SqlQuery("SELECT distinct(articles.id), articles.*, u.USERNAME, u.BIO, u.IMAGE FROM articles " +
             "INNER JOIN users u ON articles.AUTHOR_ID = u.ID " +
             "INNER JOIN followers f ON articles.AUTHOR_ID = f.USER_ID " +
@@ -99,10 +107,10 @@ public interface ArticleRepository {
             "ORDER BY articles.CREATED_AT DESC " +
             "LIMIT :limit " +
             "OFFSET :offset")
-    @RegisterRowMapper(ArticleMapper.class)
-    List<Article> findArticlesOfAuthors(@Bind("username") String username,
-                                        @Bind("offset") int offset,
-                                        @Bind("limit") int limit);
+    @RegisterRowMapper(ReviewMapper.class)
+    List<MovieReview> findReviewsOfAuthor(@Bind("username") String username,
+                                          @Bind("offset") int offset,
+                                          @Bind("limit") int limit);
 
     @SqlQuery("SELECT count(distinct articles.id) FROM articles " +
             "INNER JOIN users u ON articles.AUTHOR_ID = u.ID " +
@@ -121,7 +129,7 @@ public interface ArticleRepository {
             "INNER JOIN users on users.ID = favorites.USER_ID " +
             "WHERE users.USERNAME = :username " +
             "AND ARTICLE_ID in (<articleIds>)")
-    Set<Long> findFavoriteArticles(@Bind("username") String username,
-                                   @BindList("articleIds") Set<Long> articleIds);
+    Set<Long> findFavoriteReviews(@Bind("username") String username,
+                                  @BindList("articleIds") Set<Long> articleIds);
 
 }

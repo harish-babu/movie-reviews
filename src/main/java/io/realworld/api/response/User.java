@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.security.Principal;
 
 public class User implements Principal {
-    @JsonIgnore
     private Long id;
     private String email;
     private String username;

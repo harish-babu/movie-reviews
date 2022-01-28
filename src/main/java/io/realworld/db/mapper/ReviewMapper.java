@@ -1,6 +1,6 @@
 package io.realworld.db.mapper;
 
-import io.realworld.api.response.Article;
+import io.realworld.api.response.MovieReview;
 import io.realworld.api.response.Profile;
 import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.StatementContext;
@@ -11,22 +11,23 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-public class ArticleMapper implements RowMapper<Article> {
+public class ReviewMapper implements RowMapper<MovieReview> {
 
     @Override
-    public Article map(final ResultSet rs, final StatementContext ctx) throws SQLException {
-        final Article article = new Article();
-        article.setId(rs.getLong("ID"));
-        article.setSlug(rs.getString("SLUG"));
-        article.setTitle(rs.getString("TITLE"));
-        article.setDescription(rs.getString("DESCRIPTION"));
-        article.setBody(rs.getString("BODY"));
-        article.setFavoritesCount(rs.getInt("FAVORITES_COUNT"));
-        article.setCreatedAt(toInstant(rs, "CREATED_AT"));
-        article.setUpdatedAt(toInstant(rs, "UPDATED_AT"));
+    public MovieReview map(final ResultSet rs, final StatementContext ctx) throws SQLException {
+        final MovieReview movieReview = new MovieReview();
+        movieReview.setId(rs.getLong("ID"));
+        movieReview.setSlug(rs.getString("SLUG"));
+        movieReview.setTitle(rs.getString("TITLE"));
+        movieReview.setDescription(rs.getString("DESCRIPTION"));
+        movieReview.setBody(rs.getString("BODY"));
+        movieReview.setMovieId((rs.getLong("MOVIE_ID")));
+        movieReview.setFavoritesCount(rs.getInt("FAVORITES_COUNT"));
+        movieReview.setCreatedAt(toInstant(rs, "CREATED_AT"));
+        movieReview.setUpdatedAt(toInstant(rs, "UPDATED_AT"));
         final Profile profile = mapProfile(rs);
-        article.setAuthor(profile);
-        return article;
+        movieReview.setAuthor(profile);
+        return movieReview;
     }
 
     private Profile mapProfile(final ResultSet rs) throws SQLException {

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Instant;
 import java.util.Set;
 
-public class Article {
+public class MovieReview {
     @JsonIgnore
     private Long id;
     private String slug;
@@ -18,6 +18,7 @@ public class Article {
     private Instant updatedAt;
     private Set<String> tagList;
     private Profile author;
+    private Long movieId;
 
     public Long getId() {
         return id;
@@ -105,5 +106,13 @@ public class Article {
 
     public void setAuthor(final Profile author) {
         this.author = author;
+    }
+
+    public Long getMovieId() {
+        return movieId;
+    }
+
+    public void setMovieId(Long movieId) {
+        this.movieId = movieId;
     }
 }

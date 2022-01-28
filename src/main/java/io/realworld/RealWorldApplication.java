@@ -19,14 +19,8 @@ import io.dropwizard.migrations.MigrationsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.realworld.api.response.User;
-import io.realworld.core.ArticleService;
-import io.realworld.core.CommentService;
-import io.realworld.core.ProfileService;
-import io.realworld.core.UserService;
-import io.realworld.db.ArticleRepository;
-import io.realworld.db.CommentRepository;
-import io.realworld.db.TagRepository;
-import io.realworld.db.UserRepository;
+import io.realworld.core.*;
+import io.realworld.db.*;
 import io.realworld.resources.*;
 import io.realworld.resources.exceptionhandling.ApplicationExceptionMapper;
 import io.realworld.resources.exceptionhandling.GeneralExceptionMapper;
@@ -67,21 +61,24 @@ public class RealWorldApplication extends Application<RealWorldConfiguration> {
         final PasswordEncoder passwordEncoder = new PasswordEncoder();
         final JwtTokenService jwtTokenService = new JwtTokenService(config.getJwt());
 
-        final ArticleRepository articleRepository = jdbi.onDemand(ArticleRepository.class);
+        final ReviewRepository reviewRepository = jdbi.onDemand(ReviewRepository.class);
         final CommentRepository commentRepository = jdbi.onDemand(CommentRepository.class);
         final UserRepository userRepository = jdbi.onDemand(UserRepository.class);
         final TagRepository tagRepository = jdbi.onDemand(TagRepository.class);
+        final MoviesRepository moviesRepository = jdbi.onDemand(MoviesRepository.class);
+        final ActorRepository actorRepository = jdbi.onDemand(ActorRepository.class);
 
-        final ArticleService articleService = new ArticleService(articleRepository, userRepository, commentRepository, tagRepository);
-        final CommentService commentService = new CommentService(commentRepository, articleRepository, userRepository);
+        final ReviewsService reviewsService = new ReviewsService(reviewRepository, userRepository, commentRepository, tagRepository);
+        final MoviesService moviesService = new MoviesService(userRepository, moviesRepository, actorRepository);
+        final CommentService commentService = new CommentService(commentRepository, reviewRepository, userRepository);
         final ProfileService profileService = new ProfileService(userRepository);
         final UserService userService = new UserService(userRepository, passwordEncoder, jwtTokenService);
 
-        env.jersey().register(new ArticleResource(articleService));
+        env.jersey().register(new ReviewsResorce(reviewsService));
         env.jersey().register(new CommentResource(commentService));
         env.jersey().register(new ProfileResource(profileService));
-        env.jersey().register(new UserResource(userService));
-        env.jersey().register(new UsersResource(userService));
+        env.jersey().register(new MoviesResource(userService, moviesService, reviewsService));
+        env.jersey().register(new UsersResource(userService, reviewsService));
         env.jersey().register(new TagsResource(tagRepository));
 
         env.jersey().register(new ApplicationExceptionMapper());

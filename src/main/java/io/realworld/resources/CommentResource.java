@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 @Timed
-@Path("articles/{slug}/comments")
+@Path("reviews/{slug}/comments")
 public class CommentResource {
 
     private final CommentService commentService;

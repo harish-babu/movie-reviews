@@ -194,4 +194,154 @@
                                  onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
                                  referencedTableName="users" validate="true"/>
     </changeSet>
+    <changeSet author="liquibase" id="24">
+        <createTable tableName="movies">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="movies_pkey"/>
+            </column>
+            <column name="title" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="body" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="year_released" type="TEXT" />
+            <column name="languages" type="TEXT" />
+            <column name="likes_count" type="BIGINT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP without time zone">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP without time zone"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="liquibase" id="25">
+        <createTable tableName="movie_actors">
+            <column name="movie_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="actor_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="liquibase" id="26">
+        <createTable tableName="actors">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="authors_pkeys"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="liquibase" id="27">
+        <addForeignKeyConstraint baseColumnNames="actor_id" baseTableName="movie_actors"
+                                 constraintName="movie_actors_actor_id_fkey" deferrable="false" initiallyDeferred="false"
+                                 onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
+                                 referencedTableName="actors" validate="true"/>
+    </changeSet>
+    <changeSet author="liquibase" id="28">
+        <addForeignKeyConstraint baseColumnNames="movie_id" baseTableName="movie_actors"
+                                 constraintName="movie_actors_movie_id_fkey" deferrable="false"
+                                 initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION"
+                                 referencedColumnNames="id" referencedTableName="movies" validate="true"/>
+    </changeSet>
+    <changeSet author="liquibase" id="29">
+        <addUniqueConstraint columnNames="movie_id, actor_id" constraintName="movie_actors_ids_unq"
+                             tableName="movie_actors"/>
+    </changeSet>
+
+    <!-- START : Movie Favourites & constraints    -->
+
+    <changeSet author="liquibase" id="30">
+        <createTable tableName="favorite_movies">
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="movie_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="liquibase" id="31">
+        <addUniqueConstraint columnNames="user_id, movie_id" constraintName="favorite_movies_ids_unq"
+                             tableName="favorite_movies"/>
+    </changeSet>
+
+    <changeSet author="liquibase" id="32">
+        <addForeignKeyConstraint baseColumnNames="movie_id" baseTableName="favorite_movies"
+                                 constraintName="favorite_movies_article_id_fkey" deferrable="false" initiallyDeferred="false"
+                                 onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
+                                 referencedTableName="movies" validate="true"/>
+    </changeSet>
+
+    <changeSet author="liquibase" id="33">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="favorite_movies"
+                                 constraintName="favorite_movies_user_id_fkey" deferrable="false" initiallyDeferred="false"
+                                 onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
+                                 referencedTableName="users" validate="true"/>
+    </changeSet>
+
+    <!-- END : Movie Favourites & constraints    -->
+
+    <!-- START : Add movie_id to articles table   -->
+    <changeSet author="liquibase" id="34">
+        <addColumn tableName="articles">
+            <column afterColumn="id"
+                    name="movie_id"
+                    type="BIGINT" defaultValue="0" >
+                <constraints nullable="false" />
+            </column>
+        </addColumn>
+    </changeSet>
+    <!-- END : Add movie_id to articles table   -->
+
+
+    <!-- START : Movie <> Review Mapping constraints    -->
+    <changeSet author="liquibase" id="35">
+        <addForeignKeyConstraint baseColumnNames="movie_id" baseTableName="articles"
+                                 constraintName="movie_review_mapping_id_fkey" deferrable="false" initiallyDeferred="false"
+                                 onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
+                                 referencedTableName="movies" validate="true"/>
+    </changeSet>
+
+    <!-- END : Movie <> Review Mapping constraints    -->
+
+
+    <!--    <changeSet author="liquibase" id="25">-->
+<!--        <createTable tableName="movieReviews">-->
+<!--            <column autoIncrement="true" name="id" type="BIGINT">-->
+<!--                <constraints nullable="false" primaryKey="true" primaryKeyName="articles_pkey"/>-->
+<!--            </column>-->
+<!--            <column name="slug" type="VARCHAR(255)">-->
+<!--                <constraints nullable="false"/>-->
+<!--            </column>-->
+<!--            <column name="title" type="VARCHAR(255)">-->
+<!--                <constraints nullable="false"/>-->
+<!--            </column>-->
+<!--            <column name="description" type="VARCHAR(255)">-->
+<!--                <constraints nullable="false"/>-->
+<!--            </column>-->
+<!--            <column name="body" type="TEXT">-->
+<!--                <constraints nullable="false"/>-->
+<!--            </column>-->
+<!--            <column name="favorites_count" type="BIGINT" defaultValue="0">-->
+<!--                <constraints nullable="false"/>-->
+<!--            </column>-->
+<!--            <column name="created_at" type="TIMESTAMP without time zone">-->
+<!--                <constraints nullable="false"/>-->
+<!--            </column>-->
+<!--            <column name="updated_at" type="TIMESTAMP without time zone"/>-->
+<!--            <column name="author_id" type="BIGINT">-->
+<!--                <constraints nullable="false"/>-->
+<!--            </column>-->
+<!--        </createTable>-->
+<!--    </changeSet>-->
+
 </databaseChangeLog>

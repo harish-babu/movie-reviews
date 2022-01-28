@@ -21,7 +21,7 @@ public class PasswordAuthenticator implements Authenticator<BasicCredentials, Us
     public Optional<User> authenticate(BasicCredentials credentials) throws AuthenticationException {
         try {
             final User user = userService.login(credentials.getUsername(), credentials.getPassword());
-            return Optional.of(new User(credentials.getUsername()));
+            return Optional.of(user);
         }
         catch (ApplicationException ae) {
             return Optional.empty();
