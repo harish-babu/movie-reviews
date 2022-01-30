@@ -45,11 +45,11 @@ How to start the RealWorld application
     ```
 3. Migrate application database schema to latest version 
     ```
-    java -jar target/dropwizard-realworld-example-app-1.0-SNAPSHOT.jar db migrate config.yml
+    java -jar target/moviewreview-example-app-1.0-SNAPSHOT.jar db migrate config.yml
     ```
 4. Start the application 
     ```
-    java -jar target/dropwizard-realworld-example-app-1.0-SNAPSHOT.jar server config.yml
+    java -jar target/moviewreview-example-app-1.0-SNAPSHOT.jar server config.yml
     ```
 5. To verify that the application is running check the following URLs 
     ```
