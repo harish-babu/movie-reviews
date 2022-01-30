@@ -1,10 +1,10 @@
-# ![RealWorld Example App using Java 11 and Dropwizard](logo.png)
+# ![Moview Review Example App using Java 11 and Dropwizard](logo.png)
 
-> ### Dropwizard + JDBI3 codebase that tries to adhere to the [RealWorld](https://github.com/gothinkster/realworld-example-apps) spec and API.
+> ### Dropwizard + JDBI3 codebase that tries to adhere to the [Movie Review](https://github.com/gothinkster/realworld-example-apps) spec and API.
 
 This codebase was created to demonstrate a backend application built with [Dropwizard](https://www.dropwizard.io) including CRUD operations, authentication, pagination and more.
 
-For more information on how to this works with other frontends/backends, head over to the [RealWorld](https://github.com/gothinkster/realworld) repo.
+This is based on the RealWorld example.  For more information about RealWorld exampel, head over to the [RealWorld](https://github.com/gothinkster/realworld) repo.
 
 # How it works
 
