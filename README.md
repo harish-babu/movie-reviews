@@ -90,3 +90,80 @@ Wait for Sonar to start (check http://localhost:9001), then run a Sonar analysis
 ```
  mvn clean install sonar:sonar -Dsonar.host.url=http://localhost:9001
 ```
+
+# Adding Transactional Capability
+Using @JdbiUnitOfWork
+---
+
+Hibernate provides a handy annotation @UnitOfWork to encompass the resource level activities in to a single transaction.  Unfortunately, JDBI does not have such a capability.
+
+[Dropwizard Unit Of Work](https://github.com/isopropylcyanide/dropwizard-jdbi-unitofwork/tree/v1.1) provides such a capability to JDBI.  It lets you annotate your resource methods in the following manner.
+
+
+```
+@POST
+@Path("/")
+@JdbiUnitOfWork
+public RequestResponse createRequest() {
+      ..do stateful work (across multiple Dao's)
+      return response 
+}
+```
+
+To use it, include the maven dependency in you pom.xml
+```
+<dependency>
+    <groupId>com.github.isopropylcyanide</groupId>
+    <artifactId>dropwizard-jdbi-unitofwork</artifactId>
+    <version>1.0</version>
+ </dependency>
+ ```
+
+ In the Application run() method, create a JdbiHandleManager.  RequestScopedJdbiHandleManager should be sufficient in you are not delegating the request handling to worker threads
+
+```
+
+@Override
+public void run(final RealWorldConfiguration config, final Environment env) {
+    ...
+
+    final Jdbi jdbi = new JdbiFactory().build(env, config.getDataSourceFactory(), "database");
+    final JdbiHandleManager jdbiHandleManager = new RequestScopedJdbiHandleManager(jdbi);
+    
+    ...
+}
+
+```
+
+Register JdbiUnitOfWorkApplicationEventListener with Jersey environment.
+
+```
+@Override
+public void run(final RealWorldConfiguration config, final Environment env) {
+    ...
+
+    // Register Application Even Listener for Unit Of Work
+    env.jersey().register(new JdbiUnitOfWorkApplicationEventListener(jdbiHandleManager, new HashSet<String>()));
+
+    ...
+}
+```
+
+
+Create the Dao/Repositories using proxies.
+
+```
+@Override
+public void run(final RealWorldConfiguration config, final Environment env) {
+    ...
+
+    final ReviewRepository reviewRepository = createNewProxy (ReviewRepository.class, jdbiHandleManager);
+    final CommentRepository commentRepository = createNewProxy (CommentRepository.class, jdbiHandleManager);
+    final UserRepository userRepository = createNewProxy (UserRepository.class, jdbiHandleManager);
+
+    ...
+}
+```
+
+
+> The original version 1.1 of the package supports only JDBI 2.0.  There is a [PR](https://github.com/isopropylcyanide/dropwizard-jdbi-unitofwork/pull/51) provided that updates the code for JDBI 3.0.  In our case, we did this PR merging manually and created an artifact, checked in to a local maven repo and added that as a dependency.  In the future, this should be provided from the maven central.

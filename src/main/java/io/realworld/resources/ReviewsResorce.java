@@ -1,6 +1,7 @@
 package io.realworld.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import com.github.isopropylcyanide.jdbiunitofwork.JdbiUnitOfWork;
 import io.dropwizard.auth.Auth;
 import io.realworld.api.request.UpdatedArticle;
 import io.realworld.api.response.MovieReview;
@@ -68,7 +69,7 @@ public class ReviewsResorce {
     @Path("{slug}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Transaction
+    @JdbiUnitOfWork
     public Response updateArticle(@Auth final UserPrincipal principal,
                                   @HeaderParam("If-Match") @NotEmpty final String ifMatch,
                                   @PathParam("slug") final String slug,
