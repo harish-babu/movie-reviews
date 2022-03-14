@@ -4,8 +4,14 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.isopropylcyanide.jdbiunitofwork.core.JdbiHandleManager;
+import com.github.isopropylcyanide.jdbiunitofwork.core.LinkedRequestScopedJdbiHandleManager;
+import com.github.isopropylcyanide.jdbiunitofwork.core.ManagedHandleInvocationHandler;
+import com.github.isopropylcyanide.jdbiunitofwork.core.RequestScopedJdbiHandleManager;
+import com.github.isopropylcyanide.jdbiunitofwork.listener.JdbiUnitOfWorkApplicationEventListener;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.reflect.Reflection;
 import io.dropwizard.Application;
 import io.dropwizard.auth.PolymorphicAuthDynamicFeature;
 import io.dropwizard.auth.PolymorphicAuthValueFactoryProvider;
@@ -28,6 +34,8 @@ import io.realworld.security.*;
 import org.glassfish.jersey.internal.inject.AbstractBinder;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.jdbi.v3.core.Jdbi;
+
+import java.util.HashSet;
 
 import static io.realworld.security.JwtAuthFilter.TOKEN_PREFIX;
 
@@ -57,16 +65,28 @@ public class RealWorldApplication extends Application<RealWorldConfiguration> {
     @Override
     public void run(final RealWorldConfiguration config, final Environment env) {
         final Jdbi jdbi = new JdbiFactory().build(env, config.getDataSourceFactory(), "database");
+        final JdbiHandleManager jdbiHandleManager = new RequestScopedJdbiHandleManager(jdbi);
 
         final PasswordEncoder passwordEncoder = new PasswordEncoder();
         final JwtTokenService jwtTokenService = new JwtTokenService(config.getJwt());
 
-        final ReviewRepository reviewRepository = jdbi.onDemand(ReviewRepository.class);
-        final CommentRepository commentRepository = jdbi.onDemand(CommentRepository.class);
-        final UserRepository userRepository = jdbi.onDemand(UserRepository.class);
-        final TagRepository tagRepository = jdbi.onDemand(TagRepository.class);
-        final MoviesRepository moviesRepository = jdbi.onDemand(MoviesRepository.class);
-        final ActorRepository actorRepository = jdbi.onDemand(ActorRepository.class);
+
+//        final ReviewRepository reviewRepository = jdbi.onDemand(ReviewRepository.class);
+//        final CommentRepository commentRepository = jdbi.onDemand(CommentRepository.class);
+//        final UserRepository userRepository = jdbi.onDemand(UserRepository.class);
+//        final TagRepository tagRepository = jdbi.onDemand(TagRepository.class);
+//        final MoviesRepository moviesRepository = jdbi.onDemand(MoviesRepository.class);
+//        final ActorRepository actorRepository = jdbi.onDemand(ActorRepository.class);
+//        final TransactionalMovieRepository transactionalMovieRepository = jdbi.onDemand(TransactionalMovieRepository.class);
+
+        final ReviewRepository reviewRepository = createNewProxy (ReviewRepository.class, jdbiHandleManager);
+        final CommentRepository commentRepository = createNewProxy (CommentRepository.class, jdbiHandleManager);
+        final UserRepository userRepository = createNewProxy (UserRepository.class, jdbiHandleManager);
+        final TagRepository tagRepository = createNewProxy (TagRepository.class, jdbiHandleManager);
+        final MoviesRepository moviesRepository = createNewProxy(MoviesRepository.class, jdbiHandleManager);
+        final ActorRepository actorRepository = createNewProxy(ActorRepository.class, jdbiHandleManager);
+//        final TransactionalMovieRepository transactionalMovieRepository = jdbi.onDemand(TransactionalMovieRepository.class);
+
 
         final ReviewsService reviewsService = new ReviewsService(reviewRepository, userRepository, commentRepository, tagRepository);
         final MoviesService moviesService = new MoviesService(userRepository, moviesRepository, actorRepository);
@@ -83,6 +103,9 @@ public class RealWorldApplication extends Application<RealWorldConfiguration> {
 
         env.jersey().register(new ApplicationExceptionMapper());
         env.jersey().register(new GeneralExceptionMapper());
+
+        // Register Application Even Listener for Unit Of Work
+        env.jersey().register(new JdbiUnitOfWorkApplicationEventListener(jdbiHandleManager, new HashSet<String>()));
 
         configureJsonMapper(env.getObjectMapper());
         configureAuth(env.jersey(), jwtTokenService, userService);
@@ -124,5 +147,10 @@ public class RealWorldApplication extends Application<RealWorldConfiguration> {
         final var envVarSubst = new EnvironmentVariableSubstitutor(true);
         final var provider = new SubstitutingSourceProvider(bootstrap.getConfigurationSourceProvider(), envVarSubst);
         bootstrap.setConfigurationSourceProvider(provider);
+    }
+
+    private <T> T createNewProxy(Class<T> daoClass, JdbiHandleManager handleManager) {
+        Object proxiedInstance = Reflection.newProxy(daoClass, new ManagedHandleInvocationHandler<>(handleManager, daoClass));
+        return daoClass.cast(proxiedInstance);
     }
 }

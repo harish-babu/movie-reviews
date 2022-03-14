@@ -6,6 +6,7 @@ import io.realworld.api.response.Movie;
 import io.realworld.api.response.MovieList;
 import io.realworld.db.*;
 import io.realworld.db.mapper.MovieActorsMapper;
+import org.jdbi.v3.core.transaction.TransactionException;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
 
 import java.util.*;
@@ -40,10 +41,11 @@ public class MoviesService {
         return findMovieDetails(username, movieID);
     }
 
-    @Transaction
     public Movie starMovie(final String username, final String movieId) {
         final Long userId = userRepository.findUserIdByUsername(username);
         final Long articleId = Long.parseLong(movieId);
+
+//        transactionalMovieRepository.likeMovie(userId, articleId);
 
         moviesRepository.likeMovie(userId, articleId);
         moviesRepository.incrementFavoritesCount(articleId);

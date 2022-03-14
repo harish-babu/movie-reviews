@@ -1,6 +1,7 @@
 package io.realworld.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import com.github.isopropylcyanide.jdbiunitofwork.JdbiUnitOfWork;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.jersey.caching.CacheControl;
 import io.realworld.api.request.NewMovie;
@@ -105,6 +106,7 @@ public class MoviesResource {
     @POST
     @Path("{id}/like")
     @Produces(MediaType.APPLICATION_JSON)
+    @JdbiUnitOfWork
     public Response likeMovie(@Auth final UserPrincipal principal,
                                            @PathParam("id") final String id) {
         final Movie movie = moviesService.starMovie(principal.getUsername(), id);
