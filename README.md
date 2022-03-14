@@ -116,13 +116,12 @@ To use it, include the maven dependency in you pom.xml
     <groupId>com.github.isopropylcyanide</groupId>
     <artifactId>dropwizard-jdbi-unitofwork</artifactId>
     <version>1.0</version>
- </dependency>
+</dependency>
  ```
 
  In the Application run() method, create a JdbiHandleManager.  RequestScopedJdbiHandleManager should be sufficient in you are not delegating the request handling to worker threads
 
 ```
-
 @Override
 public void run(final RealWorldConfiguration config, final Environment env) {
     ...
@@ -132,7 +131,6 @@ public void run(final RealWorldConfiguration config, final Environment env) {
     
     ...
 }
-
 ```
 
 Register JdbiUnitOfWorkApplicationEventListener with Jersey environment.
@@ -162,6 +160,11 @@ public void run(final RealWorldConfiguration config, final Environment env) {
     final UserRepository userRepository = createNewProxy (UserRepository.class, jdbiHandleManager);
 
     ...
+}
+
+private <T> T createNewProxy(Class<T> daoClass, JdbiHandleManager handleManager) {
+    Object proxiedInstance = Reflection.newProxy(daoClass, new ManagedHandleInvocationHandler<>(handleManager, daoClass));
+    return daoClass.cast(proxiedInstance);
 }
 ```
 
